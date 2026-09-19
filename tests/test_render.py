@@ -11,7 +11,9 @@ from PIL import Image
 
 from app.render import (
     WeatherResult,
+    astronomy_url,
     format_offset,
+    parse_astronomy,
     load_config,
     render_dashboard,
     run,
@@ -49,6 +51,23 @@ SAMPLE_WEATHER = {
         ],
         "precipitation_probability_max": [20, 30, 70, 10],
     },
+    "astronomy": {
+        "date": "2026-09-18",
+        "moonrise": "14:08",
+        "moonset": "22:46",
+    },
+}
+
+SAMPLE_ASTRONOMY_RESPONSE = {
+    "properties": {
+        "data": {
+            "moondata": [
+                {"phen": "Rise", "time": "14:08"},
+                {"phen": "Upper Transit", "time": "18:30"},
+                {"phen": "Set", "time": "22:46"},
+            ]
+        }
+    }
 }
 
 
@@ -76,6 +95,17 @@ class RendererTests(unittest.TestCase):
             ZoneInfo("America/Los_Angeles")
         )
         self.assertEqual(format_offset(winter), "UTC−08:00")
+
+    def test_astronomy_contract(self):
+        parsed = parse_astronomy(SAMPLE_ASTRONOMY_RESPONSE, "2026-09-18")
+        self.assertEqual(
+            parsed,
+            {"date": "2026-09-18", "moonrise": "14:08", "moonset": "22:46"},
+        )
+        url = astronomy_url(self.config, self.now)
+        self.assertIn("date=2026-09-18", url)
+        self.assertIn("coords=47.6062%2C-122.3321", url)
+        self.assertIn("tz=-7", url)
 
     def test_weather_descriptions(self):
         self.assertEqual(weather_description(0), "Clear")
