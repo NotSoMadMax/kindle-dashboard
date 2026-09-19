@@ -7,9 +7,12 @@ from pathlib import Path
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
-from PIL import Image
+from PIL import Image, ImageChops
 
 from app.render import (
+    DOG_PHOTO_BOUNDS,
+    DOG_PHOTO_PATH,
+    FORECAST_DAYS_TO_DISPLAY,
     WeatherResult,
     astronomy_url,
     format_offset,
@@ -81,6 +84,23 @@ class RendererTests(unittest.TestCase):
         self.assertNotIn("label", self.config["clocks"][0])
         self.assertNotIn("label", self.config["clocks"][1])
         self.assertEqual(self.config["clocks"][1]["native_label"], "北京")
+
+    def test_dog_photo_asset_and_render(self):
+        self.assertEqual(FORECAST_DAYS_TO_DISPLAY, 2)
+        with Image.open(DOG_PHOTO_PATH) as dog:
+            dog.load()
+            self.assertEqual(dog.size, (290, 202))
+            self.assertEqual(dog.mode, "L")
+            colors = dog.getcolors(maxcolors=256)
+            self.assertIsNotNone(colors)
+            self.assertLessEqual(len(colors), 16)
+            self.assertFalse(dog.getexif())
+
+            rendered = render_dashboard(self.config, self.weather, self.now)
+            rendered_photo = rendered.crop(DOG_PHOTO_BOUNDS)
+            self.assertIsNone(
+                ImageChops.difference(rendered_photo, dog).getbbox()
+            )
 
     def test_expected_time_zone_offsets(self):
         seattle = self.now.astimezone(ZoneInfo("America/Los_Angeles"))

@@ -12,6 +12,7 @@ Kindle Dashboard turns a jailbroken e-reader into an always-on information displ
 ## Repository layout
 
 - `app/` — data and rendering logic
+- `assets/` — e-ink-optimized display images
 - `kindle/` — Kindle start and stop scripts
 - `nginx/`, `systemd/`, `scripts/` — hosting and lifecycle management
 - `tests/` — renderer and timezone validation

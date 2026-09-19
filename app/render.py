@@ -48,6 +48,10 @@ CJK_FONT = next(
     ),
     REGULAR_FONT,
 )
+DOG_PHOTO_PATH = ROOT / "assets" / "dog-eink.png"
+DOG_PHOTO_BOUNDS = (708, 1196, 998, 1398)
+DOG_PHOTO_FRAME_BOUNDS = (705, 1193, 1001, 1401)
+FORECAST_DAYS_TO_DISPLAY = 2
 
 
 @dataclass(frozen=True)
@@ -503,6 +507,37 @@ def draw_rise_set_arrow(
         draw.line((x, y - 11, x, y + 11), fill=0, width=3)
         draw.polygon(((x, y + 16), (x - 6, y + 7), (x + 6, y + 7)), fill=0)
 
+
+def draw_dog_photo(
+    canvas: Image.Image, draw: ImageDraw.ImageDraw
+) -> None:
+    draw.rectangle(DOG_PHOTO_FRAME_BOUNDS, outline=0, width=2)
+    try:
+        with Image.open(DOG_PHOTO_PATH) as source:
+            photo = source.convert("L")
+            expected_size = (
+                DOG_PHOTO_BOUNDS[2] - DOG_PHOTO_BOUNDS[0],
+                DOG_PHOTO_BOUNDS[3] - DOG_PHOTO_BOUNDS[1],
+            )
+            if photo.size != expected_size:
+                photo = photo.resize(expected_size, Image.Resampling.LANCZOS)
+            canvas.paste(photo, DOG_PHOTO_BOUNDS[:2])
+    except (OSError, ValueError):
+        fallback_font = fit_font(
+            draw,
+            "PHOTO UNAVAILABLE",
+            DOG_PHOTO_FRAME_BOUNDS[2] - DOG_PHOTO_FRAME_BOUNDS[0] - 20,
+            18,
+            True,
+        )
+        draw_centered(
+            draw,
+            DOG_PHOTO_FRAME_BOUNDS,
+            "PHOTO UNAVAILABLE",
+            fallback_font,
+            fill=75,
+        )
+
 def first_daily(payload: dict[str, Any], key: str) -> Any:
     return payload["daily"][key][0]
 
@@ -647,28 +682,92 @@ def render_dashboard(
 
         draw.line((left, row2_bottom, right, row2_bottom), fill=145, width=2)
 
-        # Row 3: larger, tightly stacked forecast columns.
+        # Row 3: two forecast columns and the approved dog photo.
         forecast_width = (right - left) // 3
-        for cell_index, day_index in enumerate(range(1, 4)):
+        for cell_index, day_index in enumerate(
+            range(1, FORECAST_DAYS_TO_DISPLAY + 1)
+        ):
             cell_left = left + cell_index * forecast_width
-            cell_right = right if cell_index == 2 else cell_left + forecast_width
+            cell_right = cell_left + forecast_width
             if cell_index:
-                draw.line((cell_left, row2_bottom + 10, cell_left, 1400), fill=175, width=2)
-            day_label = datetime.fromisoformat(str(daily["time"][day_index])).strftime("%a").upper()
-            forecast_condition = weather_description(int(daily["weather_code"][day_index]))
-            high = rounded_temperature(daily["temperature_2m_max"][day_index])
-            low = rounded_temperature(daily["temperature_2m_min"][day_index])
-            rain = round(float(daily["precipitation_probability_max"][day_index]))
+                draw.line(
+                    (cell_left, row2_bottom + 10, cell_left, 1400),
+                    fill=175,
+                    width=2,
+                )
+            day_label = datetime.fromisoformat(
+                str(daily["time"][day_index])
+            ).strftime("%a").upper()
+            forecast_condition = weather_description(
+                int(daily["weather_code"][day_index])
+            )
+            high = rounded_temperature(
+                daily["temperature_2m_max"][day_index]
+            )
+            low = rounded_temperature(
+                daily["temperature_2m_min"][day_index]
+            )
+            rain = round(
+                float(daily["precipitation_probability_max"][day_index])
+            )
             temperature_text = f"H {high}  L {low}C"
             rain_text = f"Rain {rain}%"
 
-            draw_centered(draw, (cell_left + 8, 1190, cell_right - 8, 1235), day_label, font(30, True))
-            condition_font = fit_font(draw, forecast_condition, cell_right - cell_left - 24, 22, True)
-            draw_centered(draw, (cell_left + 8, 1230, cell_right - 8, 1272), forecast_condition, condition_font, fill=45)
-            temperature_font = fit_font(draw, temperature_text, cell_right - cell_left - 20, 31, True)
-            draw_centered(draw, (cell_left + 8, 1268, cell_right - 8, 1322), temperature_text, temperature_font)
-            rain_font = fit_font(draw, rain_text, cell_right - cell_left - 24, 24, True)
-            draw_centered(draw, (cell_left + 8, 1318, cell_right - 8, 1372), rain_text, rain_font, fill=35)
+            draw_centered(
+                draw,
+                (cell_left + 8, 1190, cell_right - 8, 1235),
+                day_label,
+                font(30, True),
+            )
+            condition_font = fit_font(
+                draw,
+                forecast_condition,
+                cell_right - cell_left - 24,
+                22,
+                True,
+            )
+            draw_centered(
+                draw,
+                (cell_left + 8, 1230, cell_right - 8, 1272),
+                forecast_condition,
+                condition_font,
+                fill=45,
+            )
+            temperature_font = fit_font(
+                draw,
+                temperature_text,
+                cell_right - cell_left - 20,
+                31,
+                True,
+            )
+            draw_centered(
+                draw,
+                (cell_left + 8, 1268, cell_right - 8, 1322),
+                temperature_text,
+                temperature_font,
+            )
+            rain_font = fit_font(
+                draw,
+                rain_text,
+                cell_right - cell_left - 24,
+                24,
+                True,
+            )
+            draw_centered(
+                draw,
+                (cell_left + 8, 1318, cell_right - 8, 1372),
+                rain_text,
+                rain_font,
+                fill=35,
+            )
+
+        photo_column_left = left + FORECAST_DAYS_TO_DISPLAY * forecast_width
+        draw.line(
+            (photo_column_left, row2_bottom + 10, photo_column_left, 1400),
+            fill=175,
+            width=2,
+        )
+        draw_dog_photo(image, draw)
     else:
         message = "Weather unavailable — clocks remain active"
         message_font = fit_font(draw, message, width - 150, 38, True)
