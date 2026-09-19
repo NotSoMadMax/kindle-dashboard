@@ -66,7 +66,7 @@ class RendererTests(unittest.TestCase):
 
     def test_logical_render_dimensions_and_mode(self):
         image = render_dashboard(self.config, self.weather, self.now)
-        self.assertEqual(image.size, (1448, 1072))
+        self.assertEqual(image.size, (1072, 1448))
         self.assertEqual(image.mode, "L")
         minimum, maximum = image.getextrema()
         self.assertLess(minimum, maximum)
@@ -88,10 +88,10 @@ class RendererTests(unittest.TestCase):
             ):
                 status = run(config_path, self.now)
             with Image.open(public_dir / "dashboard.png") as logical:
-                self.assertEqual(logical.size, (1448, 1072))
+                self.assertEqual(logical.size, (1072, 1448))
             with Image.open(public_dir / "dashboard-kindle.png") as physical:
                 self.assertEqual(physical.size, (1072, 1448))
-            self.assertEqual(status["kindle_rotation_degrees"], 90)
+            self.assertEqual(status["kindle_rotation_degrees"], 0)
             self.assertTrue((public_dir / "status.json").exists())
             self.assertTrue((public_dir / "index.html").exists())
             self.assertFalse((temporary_root / "public").exists())

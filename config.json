@@ -19,10 +19,10 @@
     }
   ],
   "display": {
-    "orientation": "landscape",
-    "logical_width": 1448,
-    "logical_height": 1072,
-    "kindle_rotation_degrees": 90,
+    "orientation": "portrait",
+    "logical_width": 1072,
+    "logical_height": 1448,
+    "kindle_rotation_degrees": 0,
     "clock_format": "24h"
   }
 }
