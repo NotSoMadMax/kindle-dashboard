@@ -362,12 +362,17 @@ def primary_clock_card(
 ) -> None:
     left, top, right, bottom = bounds
     draw.rounded_rectangle(bounds, radius=28, outline=0, width=5, fill=255)
+
+    date_text = current.strftime("%A · %d %b %Y").upper()
+    date_font = fit_font(draw, date_text, right - left - 80, 38, True)
+    draw_centered(draw, (left + 30, top + 24, right - 30, top + 94), date_text, date_font, fill=45)
+
     time_text = current.strftime("%H:%M")
-    time_font = fit_font(draw, time_text, right - left - 70, 185, True)
-    draw_centered(draw, (left + 20, top + 28, right - 20, bottom - 80), time_text, time_font, vertical_adjustment=-4)
-    details = f"{current.strftime('%A')}  ·  {format_offset(current)}"
-    details_font = fit_font(draw, details, right - left - 50, 31)
-    draw_centered(draw, (left + 20, bottom - 88, right - 20, bottom - 22), details, details_font, fill=65)
+    time_font = fit_font(draw, time_text, right - left - 100, 350, True)
+    draw_centered(draw, (left + 30, top + 88, right - 30, bottom - 92), time_text, time_font)
+
+    zone_font = fit_font(draw, format_offset(current), right - left - 80, 31)
+    draw_centered(draw, (left + 30, bottom - 86, right - 30, bottom - 24), format_offset(current), zone_font, fill=65)
 
 
 def secondary_clock_card(
@@ -391,6 +396,7 @@ def secondary_clock_card(
     details_font = fit_font(draw, details, right - divider - 45, 24)
     draw_centered(draw, (divider + 20, bottom - 50, right - 20, bottom - 8), details, details_font, fill=65)
 
+
 def render_dashboard(
     config: dict[str, Any], weather: WeatherResult, now: datetime | None = None
 ) -> Image.Image:
@@ -405,54 +411,52 @@ def render_dashboard(
     first_time = now.astimezone(ZoneInfo(clocks[0]["timezone"]))
     second_time = now.astimezone(ZoneInfo(clocks[1]["timezone"]))
 
-    date_text = first_time.strftime("%A · %d %B %Y").upper()
-    date_font = fit_font(draw, date_text, 650, 36, True)
-    draw.text((28, 27), date_text, font=date_font, fill=0)
+    margin = 28
+    secondary_bounds = (margin, 28, width - margin, 228)
+    primary_bounds = (margin, 248, width - margin, 848)
+    weather_bounds = (margin, 868, width - margin, height - 28)
 
-    update_text = "WEATHER UNAVAILABLE"
+    secondary_clock_card(draw, secondary_bounds, clocks[1]["native_label"], second_time)
+    primary_clock_card(draw, primary_bounds, first_time)
+    draw.rounded_rectangle(weather_bounds, radius=28, outline=0, width=5, fill=255)
+
+    weather_update_text = "UNAVAILABLE"
     if weather.fetched_at:
         local_update = weather.fetched_at.astimezone(ZoneInfo(config["weather"]["timezone"]))
-        prefix = "STALE WEATHER" if weather.stale else "WEATHER UPDATED"
-        update_text = f"{prefix} {local_update.strftime('%H:%M')}"
-    update_font = fit_font(draw, update_text, 340, 24, True)
-    update_box = draw.textbbox((0, 0), update_text, font=update_font)
-    draw.text((width - 28 - (update_box[2] - update_box[0]), 36), update_text, font=update_font, fill=70)
-    draw.line((28, 94, width - 28, 94), fill=0, width=4)
+        prefix = "STALE" if weather.stale else "UPDATED"
+        weather_update_text = f"{prefix} {local_update.strftime('%H:%M')}"
 
-    margin = 28
-    first_bounds = (margin, 118, width - margin, 468)
-    second_bounds = (margin, 488, width - margin, 690)
-    primary_clock_card(draw, first_bounds, first_time)
-    secondary_clock_card(draw, second_bounds, clocks[1]["native_label"], second_time)
-
-    weather_bounds = (margin, 710, width - margin, height - 28)
-    draw.rounded_rectangle(weather_bounds, radius=28, outline=0, width=5, fill=255)
+    draw.text((60, 890), "WEATHER", font=font(25, True), fill=45)
+    update_font = fit_font(draw, weather_update_text, 260, 21, True)
+    update_box = draw.textbbox((0, 0), weather_update_text, font=update_font)
+    draw.text((width - 60 - (update_box[2] - update_box[0]), 893), weather_update_text, font=update_font, fill=85)
+    draw.line((60, 917, width - 60, 917), fill=155, width=2)
 
     if weather.payload:
         payload = weather.payload
         current = payload["current"]
         daily = payload["daily"]
         code = int(current["weather_code"])
-        draw_weather_icon(draw, code, (125, 840), 50)
 
+        draw_weather_icon(draw, code, (132, 985), 38)
         temperature = rounded_temperature(current["temperature_2m"])
-        temp_font = fit_font(draw, temperature, 330, 120, True)
-        draw.text((215, 755), temperature, font=temp_font, fill=0)
+        temp_font = fit_font(draw, temperature, 205, 76, True)
+        draw.text((215, 938), temperature, font=temp_font, fill=0)
         condition = weather_description(code)
-        condition_font = fit_font(draw, condition, 360, 32, True)
-        draw.text((215, 895), condition, font=condition_font, fill=40)
-        feels = f"Feels like {rounded_temperature(current['apparent_temperature'])}C"
-        draw.text((215, 940), feels, font=font(25), fill=70)
+        condition_font = fit_font(draw, condition, 330, 23, True)
+        draw.text((215, 1016), condition, font=condition_font, fill=45)
+        feels = f"Feels {rounded_temperature(current['apparent_temperature'])}C"
+        draw.text((215, 1048), feels, font=font(18), fill=80)
 
-        draw.line((620, 745, 620, 970), fill=145, width=3)
+        draw.line((595, 935, 595, 1063), fill=165, width=2)
         sunrise = datetime.fromisoformat(str(first_daily(payload, "sunrise"))).strftime("%H:%M")
         sunset = datetime.fromisoformat(str(first_daily(payload, "sunset"))).strftime("%H:%M")
-        draw.text((665, 805), "SUNRISE", font=font(20, True), fill=85)
-        draw.text((850, 805), "SUNSET", font=font(20, True), fill=85)
-        draw.text((665, 845), sunrise, font=font(42, True), fill=0)
-        draw.text((850, 845), sunset, font=font(42, True), fill=0)
+        draw.text((637, 950), "SUNRISE", font=font(17, True), fill=80)
+        draw.text((830, 950), "SUNSET", font=font(17, True), fill=80)
+        draw.text((637, 982), sunrise, font=font(31, True), fill=0)
+        draw.text((830, 982), sunset, font=font(31, True), fill=0)
 
-        draw.line((62, 995, width - 62, 995), fill=145, width=3)
+        draw.line((60, 1078, width - 60, 1078), fill=155, width=2)
         metrics = [
             ("HIGH / LOW", f"{rounded_temperature(first_daily(payload, 'temperature_2m_max'))} / {rounded_temperature(first_daily(payload, 'temperature_2m_min'))}C"),
             ("HUMIDITY", f"{round(float(current['relative_humidity_2m']))}%"),
@@ -461,19 +465,16 @@ def render_dashboard(
         ]
         positions = [65, 315, 565, 815]
         for index, ((label, value), x) in enumerate(zip(metrics, positions)):
-            draw.text((x, 1025), label, font=font(20, True), fill=85)
-            value_font = fit_font(draw, value, 200, 34, True)
-            draw.text((x, 1070), value, font=value_font, fill=0)
+            draw.text((x, 1094), label, font=fit_font(draw, label, 200, 16, True), fill=80)
+            draw.text((x, 1127), value, font=fit_font(draw, value, 200, 26, True), fill=0)
             if index < len(metrics) - 1:
-                separator = x + 220
-                draw.line((separator, 1015, separator, 1140), fill=175, width=2)
+                draw.line((x + 220, 1090, x + 220, 1183), fill=185, width=2)
 
-        draw.line((62, 1160, width - 62, 1160), fill=145, width=3)
-        heading_font = font(23, True)
-        draw_centered(draw, (62, 1168, width - 62, 1210), "NEXT 3 DAYS", heading_font, fill=70)
+        draw.line((60, 1193, width - 60, 1193), fill=155, width=2)
+        draw_centered(draw, (60, 1201, width - 60, 1233), "NEXT 3 DAYS", font(19, True), fill=70)
 
-        forecast_left = 62
-        forecast_right = width - 62
+        forecast_left = 60
+        forecast_right = width - 60
         cell_width = (forecast_right - forecast_left) // 3
         for cell_index, day_index in enumerate(range(1, 4)):
             left = forecast_left + cell_index * cell_width
@@ -484,20 +485,19 @@ def render_dashboard(
             low = rounded_temperature(daily["temperature_2m_min"][day_index])
             rain = round(float(daily["precipitation_probability_max"][day_index]))
 
-            draw_centered(draw, (left + 8, 1210, right - 8, 1252), day_label, font(26, True))
-            condition_font = fit_font(draw, forecast_condition, right - left - 28, 21, True)
-            draw_centered(draw, (left + 8, 1250, right - 8, 1290), forecast_condition, condition_font, fill=55)
+            draw_centered(draw, (left + 8, 1233, right - 8, 1261), day_label, font(20, True))
+            condition_font = fit_font(draw, forecast_condition, right - left - 24, 15, True)
+            draw_centered(draw, (left + 8, 1261, right - 8, 1288), forecast_condition, condition_font, fill=65)
             temperature_text = f"H {high}  L {low}C"
-            temperature_font = fit_font(draw, temperature_text, right - left - 24, 29, True)
-            draw_centered(draw, (left + 8, 1290, right - 8, 1342), temperature_text, temperature_font)
-            rain_font = font(19)
-            draw_centered(draw, (left + 8, 1340, right - 8, 1382), f"Rain {rain}%", rain_font, fill=70)
+            temperature_font = fit_font(draw, temperature_text, right - left - 20, 21, True)
+            draw_centered(draw, (left + 8, 1288, right - 8, 1324), temperature_text, temperature_font)
+            draw_centered(draw, (left + 8, 1324, right - 8, 1398), f"Rain {rain}%", font(14), fill=80)
             if cell_index < 2:
-                draw.line((right, 1218, right, 1388), fill=175, width=2)
+                draw.line((right, 1237, right, 1398), fill=185, width=2)
     else:
         message = "Weather unavailable — clocks remain active"
-        message_font = fit_font(draw, message, width - 150, 42, True)
-        draw_centered(draw, weather_bounds, message, message_font)
+        message_font = fit_font(draw, message, width - 150, 38, True)
+        draw_centered(draw, (weather_bounds[0] + 30, 930, weather_bounds[2] - 30, weather_bounds[3] - 30), message, message_font)
 
     return image
 
