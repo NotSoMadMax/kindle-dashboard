@@ -1,6 +1,6 @@
 #!/bin/sh
 # Name: Start Kindle Dashboard
-# Author: maxpi
+# Author: NotSoMadMax
 # DontUseFBInk
 
 BASE_DIR="/mnt/us/kindle-dashboard"

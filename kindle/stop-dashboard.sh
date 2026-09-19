@@ -1,6 +1,6 @@
 #!/bin/sh
 # Name: Stop Kindle Dashboard
-# Author: maxpi
+# Author: NotSoMadMax
 # DontUseFBInk
 
 BASE_DIR="/mnt/us/kindle-dashboard"
