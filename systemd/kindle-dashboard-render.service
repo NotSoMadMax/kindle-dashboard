@@ -1,0 +1,18 @@
+[Unit]
+Description=Render the Kindle weather and clock dashboard
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/Workspace/kindle-dashboard
+ExecStart=/usr/bin/python3 %h/Workspace/kindle-dashboard/app/render.py --config %h/Workspace/kindle-dashboard/config.json
+Environment=PYTHONUNBUFFERED=1
+Environment=KINDLE_DASHBOARD_PUBLIC_DIR=/dev/shm/kindle-dashboard/public
+Environment=KINDLE_DASHBOARD_STATE_DIR=%h/Workspace/kindle-dashboard/state
+TimeoutStartSec=20
+UMask=0022
+Nice=5
+
+[Install]
+WantedBy=default.target

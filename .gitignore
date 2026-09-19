@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+.venv/
+build/
+
+public/*
+!public/.gitkeep
+
+state/*
+!state/.gitkeep

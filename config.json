@@ -1,0 +1,28 @@
+{
+  "weather": {
+    "location_label": "Seattle, WA",
+    "latitude": 47.6062,
+    "longitude": -122.3321,
+    "timezone": "America/Los_Angeles",
+    "temperature_unit": "celsius",
+    "refresh_minutes": 15,
+    "timeout_seconds": 7
+  },
+  "clocks": [
+    {
+      "label": "Seattle",
+      "timezone": "America/Los_Angeles"
+    },
+    {
+      "label": "Beijing",
+      "timezone": "Asia/Shanghai"
+    }
+  ],
+  "display": {
+    "orientation": "landscape",
+    "logical_width": 1448,
+    "logical_height": 1072,
+    "kindle_rotation_degrees": 90,
+    "clock_format": "24h"
+  }
+}

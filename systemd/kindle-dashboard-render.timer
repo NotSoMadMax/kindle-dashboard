@@ -1,0 +1,12 @@
+[Unit]
+Description=Render the Kindle dashboard every minute
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+AccuracySec=1s
+RandomizedDelaySec=0
+Persistent=true
+Unit=kindle-dashboard-render.service
+
+[Install]
+WantedBy=timers.target
