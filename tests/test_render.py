@@ -15,7 +15,9 @@ from app.render import (
     load_config,
     render_dashboard,
     run,
+    validate_weather,
     weather_description,
+    weather_url,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,11 +31,23 @@ SAMPLE_WEATHER = {
         "wind_speed_10m": 8.7,
     },
     "daily": {
-        "temperature_2m_max": [18.2],
-        "temperature_2m_min": [9.8],
-        "sunrise": ["2026-09-19T06:53"],
-        "sunset": ["2026-09-19T19:10"],
-        "precipitation_probability_max": [20],
+        "time": ["2026-09-19", "2026-09-20", "2026-09-21", "2026-09-22"],
+        "weather_code": [2, 3, 61, 0],
+        "temperature_2m_max": [18.2, 17.1, 16.5, 19.0],
+        "temperature_2m_min": [9.8, 10.2, 8.7, 9.4],
+        "sunrise": [
+            "2026-09-19T06:53",
+            "2026-09-20T06:54",
+            "2026-09-21T06:56",
+            "2026-09-22T06:57",
+        ],
+        "sunset": [
+            "2026-09-19T19:10",
+            "2026-09-20T19:08",
+            "2026-09-21T19:06",
+            "2026-09-22T19:04",
+        ],
+        "precipitation_probability_max": [20, 30, 70, 10],
     },
 }
 
@@ -43,6 +57,11 @@ class RendererTests(unittest.TestCase):
         self.config = load_config(ROOT / "config.json")
         self.now = datetime(2026, 9, 19, 5, 33, tzinfo=timezone.utc)
         self.weather = WeatherResult(SAMPLE_WEATHER, self.now, False, None)
+
+    def test_timezone_display_labels(self):
+        self.assertNotIn("label", self.config["clocks"][0])
+        self.assertNotIn("label", self.config["clocks"][1])
+        self.assertEqual(self.config["clocks"][1]["native_label"], "北京")
 
     def test_expected_time_zone_offsets(self):
         seattle = self.now.astimezone(ZoneInfo("America/Los_Angeles"))
@@ -63,6 +82,14 @@ class RendererTests(unittest.TestCase):
         self.assertEqual(weather_description(63), "Rain")
         self.assertEqual(weather_description(75), "Snow")
         self.assertEqual(weather_description(95), "Thunderstorm")
+
+    def test_four_day_forecast_contract(self):
+        validate_weather(SAMPLE_WEATHER)
+        request_url = weather_url(self.config)
+        self.assertIn("forecast_days=4", request_url)
+        self.assertIn("weather_code", request_url)
+        self.assertEqual(len(SAMPLE_WEATHER["daily"]["time"]), 4)
+        self.assertEqual(self.config["weather"]["refresh_minutes"], 60)
 
     def test_logical_render_dimensions_and_mode(self):
         image = render_dashboard(self.config, self.weather, self.now)

@@ -5,16 +5,16 @@
     "longitude": -122.3321,
     "timezone": "America/Los_Angeles",
     "temperature_unit": "celsius",
-    "refresh_minutes": 15,
-    "timeout_seconds": 7
+    "refresh_minutes": 60,
+    "timeout_seconds": 7,
+    "forecast_days": 4
   },
   "clocks": [
     {
-      "label": "Seattle",
       "timezone": "America/Los_Angeles"
     },
     {
-      "label": "Beijing",
+      "native_label": "北京",
       "timezone": "Asia/Shanghai"
     }
   ],
